@@ -1,8 +1,11 @@
+[build]
+builder = "docker"
+dockerfilePath = "color_engine/Dockerfile"
+
 [deploy]
 healthcheckPath = "/health"
 restartPolicy = "always"
 
 [service]
 name = "color-engine"
-# Root directory where the Dockerfile and code are located
 rootDirectory = "color_engine"
