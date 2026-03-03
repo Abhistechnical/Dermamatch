@@ -1,0 +1,134 @@
+# color_engine/routers/analyze.py
+"""
+POST /analyze — Main skin analysis endpoint.
+Orchestrates: face detection → lighting correction → undertone
+classification → color conversion → shade recommendation.
+"""
+import io
+import numpy as np
+import cv2
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from PIL import Image
+
+from engine.face_detector import extract_skin_pixels
+from engine.lighting_correction import correct_lighting, mean_rgb
+from engine.undertone import classify_depth, classify_undertone
+from engine.color_engine import rgb_to_hex, rgb_to_cmyk, rgb_to_ryb, compute_pigment_mix
+from engine.shade_recommender import recommend_shades
+from models.schemas import SkinAnalysisResult, RGBColor, CMYKColor, RYBColor, PigmentMix, RecommendedProduct
+from database import supabase
+
+router = APIRouter()
+
+
+def hex_to_rgb(hex_str: str):
+    hex_str = hex_str.lstrip('#')
+    return [int(hex_str[i:i + 2], 16) for i in (0, 2, 4)]
+
+
+def calculate_distance(rgb1, rgb2):
+    return np.sqrt(np.sum((np.array(rgb1) - np.array(rgb2))**2))
+
+
+async def match_foundation_products(depth: str, undertone: str, target_hex: str):
+    """
+    Query Supabase for foundations matching depth + undertone and rank by proximity to hex.
+    """
+    try:
+        response = supabase.table("foundation_products") \
+            .select("*") \
+            .eq("depth", depth) \
+            .eq("undertone", undertone) \
+            .execute()
+
+        products = response.data
+        if not products:
+            return []
+
+        target_rgb = hex_to_rgb(target_hex)
+
+        # Calculate distance for each product
+        for p in products:
+            p_rgb = hex_to_rgb(p['hex_reference'])
+            p['distance'] = calculate_distance(target_rgb, p_rgb)
+
+        # Sort by distance
+        sorted_products = sorted(products, key=lambda x: x['distance'])
+
+        # Group by category (Best Match, Budget, Premium) if possible or just top 3
+        # For now, just return top 3 closest
+        results = []
+        for p in sorted_products[:3]:
+            results.append(RecommendedProduct(
+                id=str(p['id']),
+                brand=p['brand'],
+                shade_name=p['shade_name'],
+                price_range=p['price_range'],
+                affiliate_url=p['amazon_affiliate_url'],
+                hex_reference=p['hex_reference']
+            ))
+        return results
+    except Exception as e:
+        print(f"ERROR in match_foundation_products: {e}")
+        return []
+
+
+@router.post("/analyze", response_model=SkinAnalysisResult, tags=["Analysis"])
+async def analyze(file: UploadFile = File(...)):
+    print(f"DEBUG: Incoming analysis request for file: {file.filename}")
+    """
+    Analyze a face photo and return complete skin color profile.
+    """
+    # ── 1. Decode image ────────────────────────────────────────────
+    contents = await file.read()
+    try:
+        pil_img = Image.open(io.BytesIO(contents)).convert("RGB")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid image file")
+
+    img_rgb = np.array(pil_img)
+    img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+
+    # ── 2. Face detection & skin region extraction ─────────────────
+    skin_pixels = extract_skin_pixels(img_bgr)
+    if skin_pixels is None or len(skin_pixels) == 0:
+        raise HTTPException(
+            status_code=422,
+            detail="No face detected. Please upload a clear front-facing photo.",
+        )
+
+    # Raw mean RGB (before correction)
+    raw_r, raw_g, raw_b = mean_rgb(skin_pixels)
+
+    # ── 3. Lighting correction ────────────────────────────────────
+    corrected_bgr = correct_lighting(skin_pixels)
+    cor_r, cor_g, cor_b = mean_rgb(corrected_bgr)
+
+    # ── 4. Depth & undertone classification ───────────────────────
+    depth = classify_depth(cor_r, cor_g, cor_b)
+    undertone = classify_undertone(cor_r, cor_g, cor_b)
+
+    # ── 5. Color conversions ──────────────────────────────────────
+    hex_val = rgb_to_hex(cor_r, cor_g, cor_b)
+    cmyk = rgb_to_cmyk(cor_r, cor_g, cor_b)
+    ryb = rgb_to_ryb(cor_r, cor_g, cor_b)
+    pigment = compute_pigment_mix(cor_r, cor_g, cor_b, depth, undertone)
+
+    # ── 6. Shade recommendation ───────────────────────────────────
+    shades = recommend_shades(cor_r, cor_g, cor_b, n=3)
+
+    # ── 7. Affiliate Product Matching ────────────────────────────
+    matched_products = await match_foundation_products(depth, undertone, hex_val)
+
+    return SkinAnalysisResult(
+        depth=depth,
+        undertone=undertone,
+        raw_rgb=RGBColor(r=raw_r, g=raw_g, b=raw_b),
+        corrected_rgb=RGBColor(r=cor_r, g=cor_g, b=cor_b),
+        hex=hex_val,
+        cmyk=CMYKColor(**cmyk),
+        ryb=RYBColor(**ryb),
+        pigment_mix=PigmentMix(**pigment),
+        recommended_shades=shades,
+        recommended_products=matched_products
+    )

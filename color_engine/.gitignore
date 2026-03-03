@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+database.sql
+build_log.txt
+analyze_log.txt
+analyze_log_utf8.txt
+build_log_utf8.txt
