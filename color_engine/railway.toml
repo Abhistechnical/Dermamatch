@@ -1,0 +1,7 @@
+[build]
+# Since this file is now INSIDE color_engine, the path is just Dockerfile
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+restartPolicy = "always"

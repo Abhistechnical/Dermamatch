@@ -1,6 +1,0 @@
-[build]
-dockerfilePath = "color_engine/Dockerfile"
-
-[deploy]
-healthcheckPath = "/health"
-restartPolicy = "always"
