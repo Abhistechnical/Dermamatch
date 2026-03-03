@@ -41,30 +41,45 @@ def calculate_distance(rgb1, rgb2):
 async def match_foundation_products(depth: str, undertone: str, target_hex: str):
     """
     Query Supabase for foundations matching depth + undertone and rank by proximity to hex.
+    Uses 3-tier fallback: exact match → depth-only → global closest.
     """
     try:
+        target_rgb = hex_to_rgb(target_hex)
+
+        # Tier 1: Exact depth + undertone match
         response = supabase.table("foundation_products") \
             .select("*") \
             .eq("depth", depth) \
             .eq("undertone", undertone) \
             .execute()
+        products = response.data or []
 
-        products = response.data
+        # Tier 2: Fallback to depth-only if no exact match
+        if not products:
+            response = supabase.table("foundation_products") \
+                .select("*") \
+                .eq("depth", depth) \
+                .execute()
+            products = response.data or []
+
+        # Tier 3: Fallback to ALL products, sorted by hex distance
+        if not products:
+            response = supabase.table("foundation_products") \
+                .select("*") \
+                .execute()
+            products = response.data or []
+
         if not products:
             return []
 
-        target_rgb = hex_to_rgb(target_hex)
-
-        # Calculate distance for each product
+        # Calculate LAB color distance for each product
         for p in products:
             p_rgb = hex_to_rgb(p['hex_reference'])
             p['distance'] = calculate_distance(target_rgb, p_rgb)
 
-        # Sort by distance
+        # Sort by distance and return top 3
         sorted_products = sorted(products, key=lambda x: x['distance'])
 
-        # Group by category (Best Match, Budget, Premium) if possible or just top 3
-        # For now, just return top 3 closest
         results = []
         for p in sorted_products[:3]:
             results.append(RecommendedProduct(
@@ -79,6 +94,7 @@ async def match_foundation_products(depth: str, undertone: str, target_hex: str)
     except Exception as e:
         print(f"ERROR in match_foundation_products: {e}")
         return []
+
 
 
 @router.post("/analyze", response_model=SkinAnalysisResult, tags=["Analysis"])
