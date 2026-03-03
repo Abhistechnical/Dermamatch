@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pip install -r requirements.txt"
+buildCommand = "python -m pip install -r requirements.txt"
 
 [deploy]
 startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
@@ -9,4 +9,9 @@ restartPolicy = "always"
 
 [service]
 name = "color-engine"
+# Root directory where the python code and requirements.txt are located
 rootDirectory = "color_engine"
+
+[nixpacks]
+# Force nixpacks to use the python provider
+providers = ["python"]
