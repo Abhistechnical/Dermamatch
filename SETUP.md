@@ -123,51 +123,23 @@ flutter run
 
 ---
 
-## Color Engine API
+## Step 8: Amazon Affiliate Monetization
 
-### `POST /analyze`
-
-Accepts: `multipart/form-data` with field `file` (image)
-
-**Sample Response:**
-```json
-{
-  "depth": "Medium",
-  "undertone": "Warm",
-  "raw_rgb": {"r": 185, "g": 140, "b": 110},
-  "corrected_rgb": {"r": 183, "g": 138, "b": 108},
-  "hex": "#B78A6C",
-  "cmyk": {"c": 0.0, "m": 24.6, "y": 41.0, "k": 28.2},
-  "ryb": {"r": 183, "y": 142, "b": 34},
-  "pigment_mix": {
-    "yellow": 32.4,
-    "red": 22.9,
-    "blue": 3.4,
-    "white": 30.1,
-    "black": 11.2
-  },
-  "recommended_shades": [
-    "Caramel Drizzle",
-    "Warm Almond",
-    "Honey Wheat"
-  ]
-}
-```
-
-### `GET /health`
-Returns `{"status": "ok"}` — use for uptime checks.
+1. Open your Supabase **SQL Editor**.
+2. Run the script: `color_engine/affiliate_setup.sql`.
+   - This creates `foundation_products` and `affiliate_clicks` tables.
+   - It also inserts sample high-converting foundation data.
 
 ---
 
-## Production Deployment
+## Production Deployment (Render.com)
 
-| Service | Option |
-|---|---|
-| Color Engine | Railway, Render, Fly.io (Docker) |
-| Database | Supabase (already hosted) |
-| Flutter | Play Store + App Store |
-
-**Note:** Change `allow_origins=["*"]` in `main.py` to your production domain before release.
+1. Sign up at [Render.com](https://render.com) using GitHub.
+2. Click **New +** → **Blueprint**.
+3. Connect this repository.
+4. Render will use `render.yaml` to deploy your backend for **FREE**.
+5. Copy the generated `.onrender.com` URL.
+6. Update `flutter_app/.env` → `COLOR_ENGINE_URL=https://your-app.onrender.com`.
 
 ---
 
@@ -177,12 +149,11 @@ Returns `{"status": "ok"}` — use for uptime checks.
 Flutter App (Android/iOS)
     │
     ├── Supabase Auth (signup/login)
-    ├── Supabase DB (scan history, credits)
+    ├── Supabase DB (scan history, affiliate clicks)
     ├── Razorpay (credit purchase)
-    └── POST /analyze ──→ Python FastAPI Color Engine
-                              │
-                              ├── MediaPipe FaceMesh (face detection)
-                              ├── OpenCV (lighting correction)
-                              ├── Color Engine (HEX/CMYK/RYB/Pigment)
-                              └── Shade Recommender (52-shade LAB DB)
+    └── POST /analyze ──→ Python FastAPI Color Engine (Render.com)
+                               │
+                               ├── MediaPipe FaceMesh (detection)
+                               ├── OpenCV (lighting/color)
+                               └── Shade Recommender (Amazon Affiliates)
 ```
