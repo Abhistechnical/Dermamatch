@@ -1,0 +1,15 @@
+# Root .gitignore
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/.env
+**/database.sql
+**/build/
+**/*.apk
+**/.dart_tool/
+**/.pub-cache/
+**/.pub/
+**/node_modules/
+.idea/
+.vscode/
+*.log
