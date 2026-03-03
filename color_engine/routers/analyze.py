@@ -25,9 +25,17 @@ def hex_to_rgb(hex_str: str):
     hex_str = hex_str.lstrip('#')
     return [int(hex_str[i:i + 2], 16) for i in (0, 2, 4)]
 
+def rgb_to_lab(rgb):
+    # Convert RGB pixel to LAB color space
+    pixel = np.uint8([[rgb]])
+    lab = cv2.cvtColor(pixel, cv2.COLOR_RGB2LAB)
+    return lab[0][0].astype(float)
 
 def calculate_distance(rgb1, rgb2):
-    return np.sqrt(np.sum((np.array(rgb1) - np.array(rgb2))**2))
+    # Use CIE76 color difference in LAB space, which represents human visual perception much better than RGB
+    lab1 = rgb_to_lab(rgb1)
+    lab2 = rgb_to_lab(rgb2)
+    return np.sqrt(np.sum((lab1 - lab2)**2))
 
 
 async def match_foundation_products(depth: str, undertone: str, target_hex: str):
