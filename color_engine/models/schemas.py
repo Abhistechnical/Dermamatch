@@ -1,6 +1,6 @@
 # color_engine/models/schemas.py
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Optional
 
 
 class RGBColor(BaseModel):
@@ -39,6 +39,13 @@ class RecommendedProduct(BaseModel):
     hex_reference: str
 
 
+class SkinMetrics(BaseModel):
+    hydration: int  # 0-100
+    texture: int     # 0-100
+    evenness: int    # 0-100
+    radiance: int    # 0-100
+
+
 class SkinAnalysisResult(BaseModel):
     depth: str
     undertone: str
@@ -48,6 +55,8 @@ class SkinAnalysisResult(BaseModel):
     cmyk: CMYKColor
     ryb: RYBColor
     pigment_mix: PigmentMix
+    skin_score: int = 0
+    skin_metrics: Optional[SkinMetrics] = None
     recommended_shades: List[str]
     recommended_products: List[RecommendedProduct] = []
 

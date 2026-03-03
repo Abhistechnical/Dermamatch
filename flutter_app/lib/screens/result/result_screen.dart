@@ -33,7 +33,7 @@ class ResultScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analysis Result'),
+        title: const Text('Skin Analysis'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/'),
@@ -51,18 +51,38 @@ class ResultScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── 1. Skin Score Circle ───────────────────────────
+              _buildSkinScore(context, scan),
+              const SizedBox(height: 28),
+
+              // ── 2. Skin Metrics Cards ─────────────────────────
+              if (scan.skinMetrics != null)
+                _buildSkinMetrics(context, scan.skinMetrics!),
+              const SizedBox(height: 28),
+
+              // ── 3. Your Skin Profile ──────────────────────────
               _buildMainSwatch(context, skinColor, scan),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+
+              // ── 4. Color Details ──────────────────────────────
               _buildColorDetails(context, scan),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+
+              // ── 5. Pigment Breakdown ──────────────────────────
               _buildPigmentBreakdown(context, scan.pigmentMix),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+
+              // ── 6. Amazon Product Recommendations ─────────────
               if (scan.recommendedProducts.isNotEmpty) ...[
                 _buildAmazonRecommendations(context, scan.recommendedProducts),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
               ],
+
+              // ── 7. Shade Recommendations ──────────────────────
               _buildRecommendedShades(context, scan.recommendedShades, skinColor),
-              const SizedBox(height: 48),
+              const SizedBox(height: 40),
+
+              // ── Save & Close ──────────────────────────────────
               ElevatedButton(
                 onPressed: () => context.go('/'),
                 style: ElevatedButton.styleFrom(
@@ -70,7 +90,7 @@ class ResultScreen extends StatelessWidget {
                 ),
                 child: const Text('Save & Close'),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24),
@@ -93,13 +113,176 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
+  // ═════════════════════════════════════════════════════════════════
+  // 1. SKIN SCORE CIRCLE (Myntra-style)
+  // ═════════════════════════════════════════════════════════════════
+  Widget _buildSkinScore(BuildContext context, ScanResult scan) {
+    final score = scan.skinScore;
+    final scoreColor = score >= 75
+        ? const Color(0xFF4CAF50)
+        : score >= 50
+            ? const Color(0xFFFF9800)
+            : const Color(0xFFE53935);
+    final scoreLabel = score >= 75
+        ? 'Excellent'
+        : score >= 50
+            ? 'Good'
+            : 'Needs Care';
+
+    return Center(
+      child: Column(
+        children: [
+          CircularPercentIndicator(
+            radius: 80,
+            lineWidth: 10,
+            percent: score / 100,
+            animation: true,
+            animationDuration: 1200,
+            center: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$score',
+                  style: GoogleFonts.outfit(
+                    fontSize: 42,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.deepNavy,
+                  ),
+                ),
+                Text(
+                  'out of 100',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppTheme.mutedText,
+                  ),
+                ),
+              ],
+            ),
+            progressColor: scoreColor,
+            backgroundColor: AppTheme.divider,
+            circularStrokeCap: CircularStrokeCap.round,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: scoreColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: scoreColor.withOpacity(0.3)),
+            ),
+            child: Text(
+              scoreLabel,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: scoreColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack);
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // 2. SKIN METRICS CARDS (Myntra-style color-coded)
+  // ═════════════════════════════════════════════════════════════════
+  Widget _buildSkinMetrics(BuildContext context, SkinMetrics metrics) {
+    final items = [
+      {'name': 'Hydration', 'val': metrics.hydration, 'icon': Icons.water_drop_outlined},
+      {'name': 'Texture', 'val': metrics.texture, 'icon': Icons.grain},
+      {'name': 'Evenness', 'val': metrics.evenness, 'icon': Icons.blur_circular},
+      {'name': 'Radiance', 'val': metrics.radiance, 'icon': Icons.wb_sunny_outlined},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Skin Health Metrics', style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.5,
+          children: items.map((item) {
+            final val = item['val'] as int;
+            final color = val >= 70
+                ? const Color(0xFF4CAF50)
+                : val >= 40
+                    ? const Color(0xFFFF9800)
+                    : const Color(0xFFE53935);
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(item['icon'] as IconData, size: 18, color: color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          item['name'] as String,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.deepNavy,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '$val',
+                        style: GoogleFonts.outfit(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4, left: 2),
+                        child: Text(
+                          '/100',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppTheme.mutedText,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // 3. SKIN PROFILE SWATCH
+  // ═════════════════════════════════════════════════════════════════
   Widget _buildMainSwatch(BuildContext context, Color skinColor, ScanResult scan) {
     return Column(
       children: [
         Center(
           child: Container(
-            width: 140,
-            height: 140,
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
               color: skinColor,
               shape: BoxShape.circle,
@@ -114,7 +297,7 @@ class ResultScreen extends StatelessWidget {
             ),
           ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -127,6 +310,9 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
+  // ═════════════════════════════════════════════════════════════════
+  // 4. COLOR DETAILS
+  // ═════════════════════════════════════════════════════════════════
   Widget _buildColorDetails(BuildContext context, ScanResult scan) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,6 +340,9 @@ class ResultScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1);
   }
 
+  // ═════════════════════════════════════════════════════════════════
+  // 5. PIGMENT BREAKDOWN
+  // ═════════════════════════════════════════════════════════════════
   Widget _buildPigmentBreakdown(BuildContext context, PigmentMix mix) {
     final items = [
       {'name': 'Yellow', 'val': mix.yellow, 'color': const Color(0xFFF5D76E)},
@@ -206,6 +395,40 @@ class ResultScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
   }
 
+  // ═════════════════════════════════════════════════════════════════
+  // 6. AMAZON PRODUCT RECOMMENDATIONS (Myntra Regimen Style)
+  // ═════════════════════════════════════════════════════════════════
+  Widget _buildAmazonRecommendations(BuildContext context, List<RecommendedProduct> products) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text('Your Perfect Foundation Match',
+                  style: Theme.of(context).textTheme.headlineMedium),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Based on your skin analysis, these foundations are the closest match to your unique tone.',
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.mutedText, height: 1.4),
+        ),
+        const SizedBox(height: 16),
+        ...products.asMap().entries.map((entry) {
+          final labels = ['Best Match', 'Great Choice', 'Also Recommended'];
+          final label = entry.key < labels.length ? labels[entry.key] : '';
+          return _ProductCard(product: entry.value, matchLabel: label);
+        }),
+      ],
+    ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1);
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // 7. SHADE RECOMMENDATIONS
+  // ═════════════════════════════════════════════════════════════════
   Widget _buildRecommendedShades(BuildContext context, List<String> shades, Color skinColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,23 +469,6 @@ class ResultScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1);
   }
 
-  Widget _buildAmazonRecommendations(BuildContext context, List<RecommendedProduct> products) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Perfect Matches', style: Theme.of(context).textTheme.headlineMedium),
-            _Badge(label: 'AMAZON', color: const Color(0xFFFF9900)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ...products.map((p) => _ProductCard(product: p)),
-      ],
-    ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1);
-  }
-
   Color _shadeVariant(Color base, int i) {
     final factor = 1.0 + (i - 1) * 0.05;
     return Color.fromARGB(
@@ -273,6 +479,10 @@ class ResultScreen extends StatelessWidget {
     );
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// REUSABLE WIDGETS
+// ═══════════════════════════════════════════════════════════════════
 
 class _Badge extends StatelessWidget {
   final String label;
@@ -302,7 +512,8 @@ class _Badge extends StatelessWidget {
 
 class _ProductCard extends StatelessWidget {
   final RecommendedProduct product;
-  const _ProductCard({required this.product});
+  final String matchLabel;
+  const _ProductCard({required this.product, this.matchLabel = ''});
 
   @override
   Widget build(BuildContext context) {
@@ -324,6 +535,24 @@ class _ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (matchLabel.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.gold.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                matchLabel,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.gold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -359,11 +588,19 @@ class _ProductCard extends StatelessWidget {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      product.priceRange,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.mutedText,
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.divider.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        product.priceRange,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.mutedText,
+                              fontSize: 11,
+                            ),
+                      ),
                     ),
                   ],
                 ),
@@ -382,7 +619,7 @@ class _ProductCard extends StatelessWidget {
             },
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 44),
-              backgroundColor: AppTheme.accent,
+              backgroundColor: const Color(0xFFFF9900),
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -394,7 +631,7 @@ class _ProductCard extends StatelessWidget {
               children: [
                 const Icon(Icons.shopping_cart_outlined, size: 18),
                 const SizedBox(width: 8),
-                Text('Buy on Amazon', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                Text('View on Amazon', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
               ],
             ),
           ),

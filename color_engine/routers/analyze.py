@@ -15,7 +15,7 @@ from engine.lighting_correction import correct_lighting, mean_rgb
 from engine.undertone import classify_depth, classify_undertone
 from engine.color_engine import rgb_to_hex, rgb_to_cmyk, rgb_to_ryb, compute_pigment_mix
 from engine.shade_recommender import recommend_shades
-from models.schemas import SkinAnalysisResult, RGBColor, CMYKColor, RYBColor, PigmentMix, RecommendedProduct
+from models.schemas import SkinAnalysisResult, RGBColor, CMYKColor, RYBColor, PigmentMix, RecommendedProduct, SkinMetrics
 from database import supabase
 
 router = APIRouter()
@@ -144,6 +144,31 @@ async def analyze(file: UploadFile = File(...)):
     # ── 7. Affiliate Product Matching ────────────────────────────
     matched_products = await match_foundation_products(depth, undertone, hex_val)
 
+    # ── 8. Skin Score & Metrics ───────────────────────────────────
+    # Compute skin metrics based on pixel variance and color uniformity
+    hsv_pixels = cv2.cvtColor(corrected_bgr.reshape(-1, 1, 3), cv2.COLOR_BGR2HSV)
+    h_std = float(np.std(hsv_pixels[:, 0, 0]))
+    s_std = float(np.std(hsv_pixels[:, 0, 1]))
+    v_std = float(np.std(hsv_pixels[:, 0, 2]))
+    v_mean = float(np.mean(hsv_pixels[:, 0, 2]))
+
+    # Hydration: based on saturation variance (lower = more hydrated)
+    hydration = max(0, min(100, int(100 - s_std * 2.5)))
+    # Texture: based on value variance (lower = smoother)
+    texture = max(0, min(100, int(100 - v_std * 1.8)))
+    # Evenness: based on hue variance (lower = more even)
+    evenness = max(0, min(100, int(100 - h_std * 3.0)))
+    # Radiance: based on brightness mean
+    radiance = max(0, min(100, int(v_mean * 0.5)))
+
+    skin_score = int((hydration + texture + evenness + radiance) / 4)
+    skin_metrics = SkinMetrics(
+        hydration=hydration,
+        texture=texture,
+        evenness=evenness,
+        radiance=radiance
+    )
+
     return SkinAnalysisResult(
         depth=depth,
         undertone=undertone,
@@ -153,6 +178,8 @@ async def analyze(file: UploadFile = File(...)):
         cmyk=CMYKColor(**cmyk),
         ryb=RYBColor(**ryb),
         pigment_mix=PigmentMix(**pigment),
+        skin_score=skin_score,
+        skin_metrics=skin_metrics,
         recommended_shades=shades,
         recommended_products=matched_products
     )

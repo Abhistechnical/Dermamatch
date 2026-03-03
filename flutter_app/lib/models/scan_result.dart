@@ -10,6 +10,8 @@ class ScanResult {
   final CMYKColor cmyk;
   final RYBColor ryb;
   final PigmentMix pigmentMix;
+  final int skinScore;
+  final SkinMetrics? skinMetrics;
   final List<String> recommendedShades;
   final List<RecommendedProduct> recommendedProducts;
   final DateTime createdAt;
@@ -25,6 +27,8 @@ class ScanResult {
     required this.cmyk,
     required this.ryb,
     required this.pigmentMix,
+    this.skinScore = 0,
+    this.skinMetrics,
     required this.recommendedShades,
     required this.recommendedProducts,
     required this.createdAt,
@@ -42,6 +46,10 @@ class ScanResult {
       cmyk: CMYKColor.fromJson(json['cmyk'] ?? {}),
       ryb: RYBColor.fromJson(json['ryb'] ?? {}),
       pigmentMix: PigmentMix.fromJson(json['pigment_mix'] ?? {}),
+      skinScore: json['skin_score'] ?? 0,
+      skinMetrics: json['skin_metrics'] != null
+          ? SkinMetrics.fromJson(json['skin_metrics'])
+          : null,
       recommendedShades: List<String>.from(json['recommended_shades'] ?? []),
       recommendedProducts: (json['recommended_products'] as List? ?? [])
           .map((e) => RecommendedProduct.fromJson(e))
@@ -70,6 +78,8 @@ class ScanResult {
         'cmyk': cmyk.toJson(),
         'ryb': ryb.toJson(),
         'pigment_mix': pigmentMix.toJson(),
+        'skin_score': skinScore,
+        'skin_metrics': skinMetrics?.toJson(),
         'recommended_shades': recommendedShades,
         'recommended_products':
             recommendedProducts.map((e) => e.toJson()).toList(),
@@ -212,5 +222,33 @@ class PigmentMix {
         'blue': blue,
         'white': white,
         'black': black,
+      };
+}
+
+class SkinMetrics {
+  final int hydration;
+  final int texture;
+  final int evenness;
+  final int radiance;
+
+  const SkinMetrics({
+    required this.hydration,
+    required this.texture,
+    required this.evenness,
+    required this.radiance,
+  });
+
+  factory SkinMetrics.fromJson(Map<String, dynamic> json) => SkinMetrics(
+        hydration: json['hydration'] ?? 0,
+        texture: json['texture'] ?? 0,
+        evenness: json['evenness'] ?? 0,
+        radiance: json['radiance'] ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'hydration': hydration,
+        'texture': texture,
+        'evenness': evenness,
+        'radiance': radiance,
       };
 }
