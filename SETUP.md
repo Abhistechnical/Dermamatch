@@ -132,14 +132,19 @@ flutter run
 
 ---
 
-## Production Deployment (Render.com)
+## Production Deployment (Railway.app)
 
-1. Sign up at [Render.com](https://render.com) using GitHub.
-2. Click **New +** → **Blueprint**.
-3. Connect this repository.
-4. Render will use `render.yaml` to deploy your backend for **FREE**.
-5. Copy the generated `.onrender.com` URL.
-6. Update `flutter_app/.env` → `COLOR_ENGINE_URL=https://your-app.onrender.com`.
+1. Sign up at [Railway.app](https://railway.app) using GitHub.
+2. Click **New Project** → **Deploy from GitHub repo**.
+3. Select your `Dermamatch` repository.
+4. **Important**: In the service settings, set the **Root Directory** to `color_engine`.
+5. Go to **Variables** and add:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `API_KEY`
+6. Railway will automatically detect the `Procfile` and deploy your backend.
+7. Copy the generated `.up.railway.app` URL.
+8. Update `flutter_app/.env` → `COLOR_ENGINE_URL=https://your-app.up.railway.app`.
 
 ---
 
@@ -151,7 +156,7 @@ Flutter App (Android/iOS)
     ├── Supabase Auth (signup/login)
     ├── Supabase DB (scan history, affiliate clicks)
     ├── Razorpay (credit purchase)
-    └── POST /analyze ──→ Python FastAPI Color Engine (Render.com)
+    └── POST /analyze ──→ Python FastAPI Color Engine (Railway)
                                │
                                ├── MediaPipe FaceMesh (detection)
                                ├── OpenCV (lighting/color)
