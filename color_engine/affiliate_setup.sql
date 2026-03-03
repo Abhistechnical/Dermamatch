@@ -40,3 +40,6 @@ INSERT INTO public.foundation_products (brand, shade_name, undertone, depth, hex
 VALUES 
 ('NYX', 'Can''t Stop Won''t Stop - Light', 'Neutral', 'Light', '#EFC8B1', 'https://amzn.to/example-nyx', 'Budget'),
 ('MAC', 'Studio Fix Fluid - N18', 'Neutral', 'Light', '#E9C1AA', 'https://amzn.to/example-mac', 'Premium');
+
+-- Add missing products column to scans table for Affiliate recommendations
+ALTER TABLE public.scans ADD COLUMN IF NOT EXISTS recommended_products_json JSONB;
