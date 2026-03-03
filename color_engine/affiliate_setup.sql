@@ -30,16 +30,16 @@ CREATE POLICY "Allow authenticated insert" ON public.affiliate_clicks FOR INSERT
 -- Insert sample data (Warm/Medium example)
 INSERT INTO public.foundation_products (brand, shade_name, undertone, depth, hex_reference, amazon_affiliate_url, price_range)
 VALUES 
-('Maybelline', 'Fit Me Matte + Poreless - 220 Natural Beige', 'Warm', 'Medium', '#D4A78A', 'https://amzn.to/example-maybelline', 'Budget'),
-('Estée Lauder', 'Double Wear - 3W1 Tawny', 'Warm', 'Medium', '#CF9F81', 'https://amzn.to/example-esteelauder', 'Premium'),
-('L''Oréal Paris', 'True Match - G3 Gold Linen', 'Warm', 'Medium', '#D9AD91', 'https://amzn.to/example-loreal', 'Mid-Range'),
-('Fenty Beauty', 'Pro Filt''r - 240', 'Warm', 'Medium', '#C59576', 'https://amzn.to/example-fenty', 'Premium');
+('Maybelline', 'Fit Me Matte + Poreless - 220 Natural Beige', 'Warm', 'Medium', '#D4A78A', 'https://amzn.to/40EoVOe', 'Budget'),
+('Estée Lauder', 'Double Wear - 3W1 Tawny', 'Warm', 'Medium', '#CF9F81', 'https://amzn.to/40EoVOe', 'Premium'),
+('L''Oréal Paris', 'True Match - G3 Gold Linen', 'Warm', 'Medium', '#D9AD91', 'https://amzn.to/40EoVOe', 'Mid-Range'),
+('Fenty Beauty', 'Pro Filt''r - 240', 'Warm', 'Medium', '#C59576', 'https://amzn.to/40EoVOe', 'Premium');
 
 -- Neutral/Light example
 INSERT INTO public.foundation_products (brand, shade_name, undertone, depth, hex_reference, amazon_affiliate_url, price_range)
 VALUES 
-('NYX', 'Can''t Stop Won''t Stop - Light', 'Neutral', 'Light', '#EFC8B1', 'https://amzn.to/example-nyx', 'Budget'),
-('MAC', 'Studio Fix Fluid - N18', 'Neutral', 'Light', '#E9C1AA', 'https://amzn.to/example-mac', 'Premium');
+('NYX', 'Can''t Stop Won''t Stop - Light', 'Neutral', 'Light', '#EFC8B1', 'https://amzn.to/40EoVOe', 'Budget'),
+('MAC', 'Studio Fix Fluid - N18', 'Neutral', 'Light', '#E9C1AA', 'https://amzn.to/40EoVOe', 'Premium');
 
 -- Add missing products column to scans table for Affiliate recommendations
 ALTER TABLE public.scans ADD COLUMN IF NOT EXISTS recommended_products_json JSONB;
