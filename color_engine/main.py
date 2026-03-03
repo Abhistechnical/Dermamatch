@@ -6,7 +6,7 @@ from routers import analyze, affiliate
 app = FastAPI(
     title="DermaMatch AI - Color Engine",
     description="Skin tone analysis and color matching microservice",
-    version="1.0.0",
+    version="1.0.1", # Triggering manual redeploy
 )
 
 app.add_middleware(
