@@ -1,11 +1,6 @@
 [build]
-builder = "docker"
 dockerfilePath = "color_engine/Dockerfile"
 
 [deploy]
 healthcheckPath = "/health"
 restartPolicy = "always"
-
-[service]
-name = "color-engine"
-rootDirectory = "color_engine"
