@@ -1,17 +1,8 @@
-[build]
-builder = "nixpacks"
-buildCommand = "python -m pip install -r requirements.txt"
-
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 restartPolicy = "always"
 
 [service]
 name = "color-engine"
-# Root directory where the python code and requirements.txt are located
+# Root directory where the Dockerfile and code are located
 rootDirectory = "color_engine"
-
-[nixpacks]
-# Force nixpacks to use the python provider
-providers = ["python"]
